@@ -57,10 +57,19 @@ namespace StackExchange.Redis
             serverType = ServerType.Standalone;
             ConfigCheckSeconds = Multiplexer.RawConfig.ConfigCheckSeconds;
             // overrides for twemproxy
-            if (multiplexer.RawConfig.Proxy == Proxy.Twemproxy)
+            switch (multiplexer.RawConfig.Proxy)
             {
-                databases = 1;
-                serverType = ServerType.Twemproxy;
+                case Proxy.Twemproxy:
+                    databases = 1;
+                    serverType = ServerType.Twemproxy;
+                    break;
+                case Proxy.Envoyproxy:
+                    databases = 1;
+                    serverType = ServerType.Envoyproxy;
+                    break;
+                case Proxy.None:
+                    break;
+
             }
         }
 
@@ -329,7 +338,7 @@ namespace StackExchange.Redis
 
         internal async Task AutoConfigureAsync(PhysicalConnection connection, LogProxy log = null)
         {
-            if (serverType == ServerType.Twemproxy)
+            if (!serverType.SupportsAutoConfigure())
             {
                 // don't try to detect configuration; all the config commands are disabled, and
                 // the fallback master/replica detection won't help
